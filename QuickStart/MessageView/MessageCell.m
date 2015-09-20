@@ -67,6 +67,12 @@ const float kMessageCellLabelOffsetPercentage = 0.02;
 	[self setupLabels];
 }
 
+- (void)markDone {
+    NSLog(@"mark done");
+    UIView *getView = (UIView*)[self.contentView viewWithTag:1];
+    getView.backgroundColor = [UIColor colorWithRed:217.0/255.0 green:217.0/255.0 blue:217.0/255.0 alpha:1.0];
+}
+
 - (void)setupLabels {
 	CGFloat offset = self.contentView.frame.size.width * kMessageCellLabelOffsetPercentage;
 	CGFloat width = self.contentView.frame.size.width * kMessageCellLabelWidthPercentage;
@@ -92,6 +98,7 @@ const float kMessageCellLabelOffsetPercentage = 0.02;
 	}
 	UIView *contentView = [[UIView alloc] initWithFrame:contentFrame];
 	contentView.backgroundColor = self.contentBackgroundColor;
+    contentView.tag = 1;
 	contentView.layer.cornerRadius = 5.0;
 	[contentView addSubview:contentLabel];
 	[self.contentView addSubview:contentView];

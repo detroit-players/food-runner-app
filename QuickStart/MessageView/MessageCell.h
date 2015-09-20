@@ -26,6 +26,8 @@
 		isOutboundMessage:(BOOL)isOutboundMessage
 					color:(UIColor *)color;
 
+- (void)markDone;
+
 + (CGFloat)estimatedHeightForMessageContent:(NSString *)messageContent
 								  cellWidth:(float)width;
 

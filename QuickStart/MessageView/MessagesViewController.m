@@ -75,7 +75,30 @@ NSString * const kTextContent = @"textContent";
 											 selector: @selector(handleReturnToForeground)
 												 name: UIApplicationWillEnterForegroundNotification
 											   object: nil];
+    
+    UITapGestureRecognizer* doubleTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(doubleTap:)];
+    doubleTap.numberOfTapsRequired = 2;
+    doubleTap.numberOfTouchesRequired = 1;
+    [self.tableView addGestureRecognizer:doubleTap];
 
+
+}
+
+-(void)doubleTap:(UISwipeGestureRecognizer*)tap
+{
+    if (UIGestureRecognizerStateEnded == tap.state)
+    {
+        CGPoint p = [tap locationInView:tap.view];
+        NSIndexPath* indexPath = [self.tableView indexPathForRowAtPoint:p];
+        MessageCell* cell = (MessageCell*)[self.tableView cellForRowAtIndexPath:indexPath];
+        NSMutableDictionary *messageDict = [self.messageList[indexPath.row] mutableCopy];
+        [messageDict setObject:@(YES) forKey:@"done"];
+        NSMutableArray *copyList = [self.messageList mutableCopy];
+        [copyList replaceObjectAtIndex:indexPath.row withObject:messageDict];
+        self.messageList = copyList;
+        [cell markDone];
+        // Do your stuff
+    }
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -167,7 +190,8 @@ NSString * const kTextContent = @"textContent";
 		NSDictionary *messageDict = @{@"messageContent":self.textView.text,
 									  @"timestampString":[[QuickStartUtils friendlyDateFormatter] stringFromDate:[NSDate date]],
 									  @"senderUsername":kMeString,
-									  @"isOutboundMessage":@(YES)};
+									  @"isOutboundMessage":@(YES),
+                                      @"done":@(NO)};
 		
 		NSMutableArray *tempMessageList = self.messageList.mutableCopy;
 		[tempMessageList insertObject:messageDict atIndex:0];
@@ -188,13 +212,18 @@ NSString * const kTextContent = @"textContent";
 			NSDictionary *messageDict = @{@"messageContent":message.messageContent[kTextContent] ?: @"Message content missing",
 										  @"timestampString":[[QuickStartUtils friendlyDateFormatter] stringFromDate:message.timestamp],
 										  @"senderUsername":message.sender.username,
-										  @"isOutboundMessage":@(NO)};
+                                          @"isOutboundMessage":@(NO),
+                                          @"done":@(NO)};
 			
 			NSMutableArray *tempMessageList = self.messageList.mutableCopy;
 			[tempMessageList insertObject:messageDict atIndex:0];
+            for (NSDictionary *dict in tempMessageList) {
+                NSLog(@"%@", dict[@"messageContent"]);
+            }
 			self.messageList = tempMessageList.copy;
 			
 			[self.tableView reloadData];
+            NSLog(@"reloaded");
 		}
 	}
 }
@@ -202,14 +231,21 @@ NSString * const kTextContent = @"textContent";
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
 	MessageCell *cell = (MessageCell *)[tableView dequeueReusableCellWithIdentifier:@"MessageCell" forIndexPath:indexPath];
+    cell.selectionStyle = UITableViewCellSelectionStyleNone;
 	NSDictionary *messageDict = self.messageList[indexPath.row];
-	NSString *senderUsername = messageDict[@"senderUsername"];
-	BOOL isOutboundMessage = [messageDict[@"isOutboundMessage"] boolValue];
+    NSString *senderUsername = messageDict[@"senderUsername"];
+    BOOL isOutboundMessage = [messageDict[@"isOutboundMessage"] boolValue];
+    BOOL isDone = [messageDict[@"done"] boolValue];
+    UIColor *newColor = [self colorForName:senderUsername];
+    NSLog(@"tag %li %@", (long)cell.tag, messageDict[@"messageContent"]);
+    if (isDone) {
+        newColor = [UIColor colorWithRed:217.0/255.0 green:217.0/255.0 blue:217.0/255.0 alpha:1.0];
+    }
 	[cell setMessageContent:messageDict[@"messageContent"]
 			 senderUsername:senderUsername
 			timestampString:messageDict[@"timestampString"]
 		  isOutboundMessage:isOutboundMessage
-					  color:[self colorForName:senderUsername]];
+					  color:newColor];
 	
 	cell.transform = self.tableView.transform;
 	return cell;
@@ -339,6 +375,7 @@ NSString * const kTextContent = @"textContent";
 	self.navigationItem.titleView = imageView;
 	self.textInputbar.autoHideRightButton = NO;
 	self.textInputbar.backgroundColor = myColor;
+    self.textInputbar.hidden = YES;
 }
 
 @end
